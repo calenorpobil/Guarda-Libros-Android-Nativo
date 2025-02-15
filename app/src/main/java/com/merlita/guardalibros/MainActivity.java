@@ -1,0 +1,370 @@
+package com.merlita.guardalibros;
+
+import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteConstraintException;
+import android.database.sqlite.SQLiteDatabase;
+import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.DialogFragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.merlita.guardalibros.Excepciones.miExcepcion;
+
+import java.sql.Date;
+import java.util.ArrayList;
+
+public class MainActivity extends AppCompatActivity implements View.OnClickListener,
+        DialogoPersonalizado.CustomDialogListener  {
+
+    RecyclerView vistaRecycler;
+    ArrayList<DatosLibros> lista = new ArrayList<DatosLibros>();
+    TextView tv;
+    Adaptador adaptador;
+    Button btAlta;
+    EditText et;
+    int posicionEdicion;
+    DatosLibros auxiliar;
+    private final ArrayList<DatosLibros> datosVacio =
+            new ArrayList<>();
+
+    SQLiteDatabase db;
+
+    Intent resultado = null;
+
+    private void toast(miExcepcion e) {
+        Toast.makeText(this, e.getMessage(),
+                Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        //EdgeToEdge.enable(this);
+        setContentView(R.layout.activity_main);
+
+        try(UsuariosSQLiteHelper usdbh =
+                new UsuariosSQLiteHelper(this,
+                        "DBUsuarios", null, 1);){
+            db = usdbh.getWritableDatabase();
+
+            //Crear tabla si existe:
+            usdbh.onCreate(db);
+
+            datosParaSQL();
+            rellenarLista();
+
+
+
+            db.close();
+        }
+
+        /*
+                "INSERT INTO libros (categoria, titulo, autor, idioma, fecha_lectura_ini, fecha_lectura_fin, prestado_a, valoracion, formato, notas) " +
+                "VALUES ('Fantasía', 'El nombre del viento', 'Patrick Rothfuss', 'Español', NULL, NULL, NULL, 4.9, 'ePub', 'Narrativa envolvente y personajes complejos');" +
+                "" +
+                "INSERT INTO libros (categoria, titulo, autor, idioma, fecha_lectura_ini, fecha_lectura_fin, prestado_a, valoracion, formato, notas) " +
+                "VALUES ('Ciencia', 'Breves respuestas a las grandes preguntas', 'Stephen Hawking', 'Español', 1680307200000, NULL, 'Carlos Mendoza', 4.5, 'Físico', 'Último libro del famoso físico teórico');" +
+                "" +
+                "INSERT INTO libros (categoria, titulo, autor, idioma, fecha_lectura_ini, fecha_lectura_fin, prestado_a, valoracion, formato, notas) " +
+                "VALUES ('Filosofía', 'El mundo de Sofía', 'Jostein Gaarder', 'Español', 1682899200000, 1683936000000, NULL, 4.4, 'PDF', 'Novela sobre historia de la filosofía');" +
+                "" +
+                "INSERT INTO libros (categoria, titulo, autor, idioma, fecha_lectura_ini, fecha_lectura_fin, prestado_a, valoracion, formato, notas) " +
+                "VALUES ('Autoayuda', 'Hábitos atómicos', 'James Clear', 'Español', 1685577600000, 1686700800000, 'María González', 4.3, 'Digital', 'Métodos prácticos para construir hábitos');" +
+                "" +
+                "INSERT INTO libros (categoria, titulo, autor, idioma, fecha_lectura_ini, fecha_lectura_fin, prestado_a, valoracion, formato, notas) " +
+                "VALUES ('Historia', 'SPQR', 'Mary Beard', NULL, NULL, NULL, NULL, 4.2, 'ePub', 'Historia del Imperio Romano desde sus inicios');" +
+                "" +
+                "INSERT INTO libros (categoria, titulo, autor, idioma, fecha_lectura_ini, fecha_lectura_fin, prestado_a, valoracion, formato, notas) " +
+                "VALUES ('Poesía', 'Veinte poemas de amor y una canción desesperada', 'Pablo Neruda', 'Español', 1688169600000, 1690761600000, NULL, 4.7, 'Físico', 'Clásico de la poesía amorosa en español');" +
+                "\n" +
+                "INSERT INTO libros (categoria, titulo, autor, idioma, fecha_lectura_ini, fecha_lectura_fin, prestado_a, valoracion, formato, notas) \n" +
+                "VALUES ('Finanzas', 'Padre rico, padre pobre', 'Robert T. Kiyosaki', 'Español', 1690848000000, 1693440000000, 'David Torres', 4.0, 'Digital', 'Enfoque alternativo sobre educación financiera');");
+*/
+        if(lista.isEmpty()){
+            //try {
+                auxiliar = new DatosLibros();
+            //} catch (miExcepcion e) {
+            //    toast(e);
+            //}
+            //El mensaje de inicio:
+            datosVacio.add(auxiliar);
+        }
+        /*
+        try {
+            inicializarLista();
+        } catch (miExcepcion e) {
+            toast(e);
+        }*/
+        tv = findViewById(R.id.tvTitulo);
+        btAlta = findViewById(R.id.btAlta);
+        //et = findViewById(R.id.editTextText);
+        vistaRecycler = findViewById(R.id.recyclerView);
+        adaptador = new Adaptador(this, this, lista);
+
+        vistaRecycler.setLayoutManager(new LinearLayoutManager(this));
+        vistaRecycler.setAdapter(adaptador);
+
+        btAlta.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+
+                mostrarDialogo();
+                //setResult(RESULT_OK, i);
+                //finish();
+            }
+        });
+    }
+
+    private void mostrarFormularioAlta()  {
+        Intent i = new Intent(MainActivity.this, AltaActivity.class);
+        lanzadorAlta.launch(i);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_fecha_hora, menu);
+        return true;
+    }
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if(item.getItemId() == R.id.fecha || item.getItemId() == R.id.hora){
+            //DialogFragment ff = new FragmentoFecha();
+            //ff.show(getSupportFragmentManager(), "fecha");
+            //DialogFragment fh = new FragmentoHora();
+            //fh.show(getSupportFragmentManager(), "hora");
+
+            Toast.makeText(this, "Hoola",
+                    Toast.LENGTH_SHORT).show();
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void datosParaSQL() {
+        if(db!=null){
+            try{
+                db.execSQL("INSERT INTO bdlibros (categoria, titulo, autor, idioma, fecha_lectura_ini, fecha_lectura_fin, prestado_a, valoracion, formato, notas) \n" +
+                        "VALUES ('Ficción', 'Cien años de soledad', 'Gabriel García Márquez', 'Español', 1672531200000, 1673740800000, NULL, 4.8, 'Físico', " +
+                        "'Obra maestra del realismo mágico latinoamericano');");
+                db.execSQL("INSERT INTO bdlibros (categoria, titulo, autor, idioma, fecha_lectura_ini, fecha_lectura_fin, prestado_a, valoracion, formato, notas) " +
+                        "VALUES ('No ficción', 'Sapiens: De animales a dioses', 'Yuval Noah Harari', 'Inglés', 1677984000000, 1679289600000, NULL, 4.7, 'Digital', 'Fascinante recorrido por la historia humana')");
+                db.execSQL("INSERT INTO bdlibros (categoria, titulo, autor, idioma, fecha_lectura_ini, fecha_lectura_fin, prestado_a, valoracion, formato, notas) " +
+                        "VALUES ('Tecnología', 'Clean Code', 'Robert C. Martin', 'Inglés', 1675987200000, 1677283200000, 'Ana Sánchez', 4.6, 'Físico', 'Fundamental para mejores prácticas de programación');");
+            } catch (SQLiteConstraintException e) {
+                Toast.makeText(this, e.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void rellenarLista() {
+        Cursor c = db.rawQuery("select * from bdlibros;", null);
+
+        while (c.moveToNext()) {
+            int index = c.getColumnIndex("titulo");
+            String titulo = c.getString(index);
+            index = c.getColumnIndex("categoria");
+            String categoria = c.getString(index);
+            index = c.getColumnIndex("autor");
+            String autor = c.getString(index);
+            index = c.getColumnIndex("idioma");
+            String idioma = c.getString(index);
+            index = c.getColumnIndex("fecha_lectura_ini");
+            Long fecha_lectura_ini = c.getLong(index);
+            index = c.getColumnIndex("fecha_lectura_fin");
+            Long fecha_lectura_fin = c.getLong(index);
+            index = c.getColumnIndex("prestado_a");
+            String prestado_a = c.getString(index);
+            index = c.getColumnIndex("valoracion");
+            Float valoracion = c.getFloat(index);
+            index = c.getColumnIndex("formato");
+            String formato = c.getString(index);
+            index = c.getColumnIndex("notas");
+            String notas = c.getString(index);
+            index = c.getColumnIndex("finalizado");
+            int finalizado = c.getInt(index);
+            lista.add(new DatosLibros(categoria, titulo, autor, idioma,
+                    fecha_lectura_fin, fecha_lectura_ini, prestado_a,
+                    valoracion, formato, notas, finalizado));
+        }
+    }
+
+
+
+
+    //MENU CONTEXTUAL
+    @Override
+    public boolean onContextItemSelected(@NonNull MenuItem item){
+        switch(item.getItemId())
+        {
+            case 121:
+                //MENU --> EDITAR
+                Intent i = new Intent(this, EditActivity.class);
+                posicionEdicion = item.getGroupId();
+                String titulo = lista.get(posicionEdicion).getTitulo();
+                String autor = lista.get(posicionEdicion).getAutor();
+                i.putExtra("NOMBRE", titulo);
+                i.putExtra("EDAD", autor);
+                lanzadorEdit.launch(i);
+                return true;
+            case 122:
+                //MENU --> BORRAR
+                lista.remove(item.getGroupId());
+                adaptador.notifyDataSetChanged();
+                return true;
+            default:
+                return super.onContextItemSelected(item);
+        }
+    }
+
+
+
+    @Override
+    public void onClick(View view) {
+        tv.setText(lista.get(
+                vistaRecycler.getChildAdapterPosition(view)).getTitulo());
+    }
+
+    //RECOGER EDIT ACTIVITY
+    ActivityResultLauncher<Intent> lanzadorEdit = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            new ActivityResultCallback<ActivityResult>()
+            {
+                @Override
+                public void onActivityResult(ActivityResult resultado)
+                {
+                    if(resultado.getResultCode()==RESULT_OK){
+                        Intent i = resultado.getData();
+                        assert i != null;
+                        String titulo = i.getStringExtra("NOMBRE");
+                        String autor = i.getStringExtra("EDAD");
+
+                        //try {
+                            if(posicionEdicion==-999){
+                                lista.add(0, new DatosLibros(titulo, autor));
+                            }else{
+                                lista.set(posicionEdicion, new DatosLibros(titulo, autor));
+                            }
+                        //} catch (miExcepcion e) {
+                          //  toast(e);
+                        //}
+                        adaptador.notifyDataSetChanged();
+                    }
+                }
+            }
+    );
+
+
+    //RECOGER ALTA ACTIVITY
+    ActivityResultLauncher<Intent>
+            lanzadorAlta = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
+            new ActivityResultCallback<ActivityResult>() {
+                @Override
+                public void onActivityResult(ActivityResult resultado) {
+                    if(resultado.getResultCode()==RESULT_OK) {
+
+                        Intent data = resultado.getData();
+                        assert data != null;
+                        DatosLibros nuevoLibro = new DatosLibros(
+                                data.getStringExtra("CATEGORIA"),
+                                data.getStringExtra("TITULO"),
+                                data.getStringExtra("AUTOR"),
+                                data.getStringExtra("IDIOMA"),
+                                data.getLongExtra("FECHA_INICIO", -1),
+                                data.getLongExtra("FECHA_FIN", -1),
+                                data.getStringExtra("PRESTADO_A"),
+                                data.getFloatExtra("VALORACION", -1f),
+                                data.getStringExtra("FORMATO"),
+                                data.getStringExtra("NOTAS"),
+                                data.getIntExtra("FINALIZADO", 0)
+                        );
+
+                        // Insertar en BD
+                        insertarSQL(nuevoLibro);
+                        lista.add(nuevoLibro);
+                        adaptador.notifyDataSetChanged();
+                    }else{
+                        //SIN DATOS
+                    }
+                }
+            });
+
+
+
+    @Override
+    public void onAltaLibroClick() {
+        // Aquí va el código para el alta de libro
+        mostrarFormularioAlta();
+    }
+
+    @Override
+    public void onAcercaDeClick() {
+        // Mostrar información de la app
+    }
+
+    @Override
+    public void onOrdenarClick() {
+        // Mostrar opciones de ordenación
+    }
+
+    @Override
+    public void onImportarClick() {
+        // Lógica de importación
+    }
+
+    @Override
+    public void onExportarClick() {
+        // Lógica de exportación
+    }
+
+    // Método para mostrar el diálogo
+    private void mostrarDialogo() {
+        DialogoPersonalizado dialog = new DialogoPersonalizado();
+        dialog.show(getSupportFragmentManager(), "CustomDialog");
+    }
+
+    private void insertarSQL(DatosLibros libro){
+        try(UsuariosSQLiteHelper usdbh =
+                    new UsuariosSQLiteHelper(this,
+                            "DBUsuarios", null, 1);){
+            db = usdbh.getWritableDatabase();
+
+            Date c = new Date(System.currentTimeMillis());
+            long fechaSQLPrueba = c.getTime();
+
+            db.execSQL("INSERT INTO bdlibros (categoria, titulo, autor, idioma, fecha_lectura_ini" +
+                    ", fecha_lectura_fin, prestado_a, valoracion, formato, notas, finalizado) " +
+                    "VALUES ('"+libro.getCategoria()+"', '"+
+                    libro.getTitulo()+"', '"+libro.getAutor()+"', '"+libro.getIdioma()+"', '" +
+                    libro.getFecha_lectura_ini()+"', '"+libro.getFecha_lectura_fin()+"', '"+
+                    libro.getPrestado_a()+"', '"+libro.getValoracion()+"', '" +
+                    libro.getFormato()+"', '"+libro.getNotas()+"', "+libro.getFinalizado()+");");
+
+            db.close();
+        }
+    }
+
+
+}
