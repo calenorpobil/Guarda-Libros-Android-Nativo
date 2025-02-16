@@ -14,11 +14,13 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class Adaptador extends RecyclerView.Adapter<Adaptador.MiContenedor>
     implements View.OnClickListener {
-    Context context;
-    ArrayList<DatosLibros> lista;
+    private Context context;
+    private ArrayList<DatosLibros> lista;
+    private ArrayList<DatosLibros> librosOriginal; // Lista original sin filtrar
     View.OnClickListener escuchador;
 
     @NonNull
@@ -44,7 +46,7 @@ public class Adaptador extends RecyclerView.Adapter<Adaptador.MiContenedor>
         if(prestado!=null)
             holder.cbPrestado.setChecked(!prestado.isEmpty());
         holder.cbFinalizado.setChecked(libro.getFinalizado());
-        holder.cbNotas.setChecked(libro.getNotas().isEmpty());
+        holder.cbNotas.setChecked(!libro.getNotas().isEmpty());
         if (libro.getIdioma().equals("Español"))
             holder.tvBandera.setText("\uD83C\uDDEA\uD83C\uDDF8");
         if (libro.getIdioma().equals("Inglés"))
@@ -64,7 +66,7 @@ public class Adaptador extends RecyclerView.Adapter<Adaptador.MiContenedor>
         this.escuchador = escuchador;
         this.context = context;
         this.lista = lista;
-
+        this.librosOriginal = new ArrayList<>(lista);
     }
 
     @Override
@@ -110,6 +112,45 @@ public class Adaptador extends RecyclerView.Adapter<Adaptador.MiContenedor>
             contextMenu.add(getAdapterPosition(), 122, 1, "BORRAR");
         }
     }
+
+
+    //METODOS PARA ORDENAR
+    public void ordenarPorTitulo() {
+        Collections.sort(lista, (l1, l2) -> l1.getTitulo().
+                compareToIgnoreCase(l2.getTitulo()));
+        notifyDataSetChanged();
+    }
+
+    public void ordenarPorAutor() {
+        Collections.sort(lista, (l1, l2) -> l1.getAutor().
+                compareToIgnoreCase(l2.getAutor()));
+        notifyDataSetChanged();
+    }
+
+    public void ordenarPorFechaInicio() {
+        Collections.sort(lista, (l1, l2) -> {
+            if (l1.getFecha_lectura_ini() == null && l2.getFecha_lectura_ini() == null) return 0;
+            if (l1.getFecha_lectura_ini() == null) return 1;
+            if (l2.getFecha_lectura_ini() == null) return -1;
+            // Más reciente primero:
+            return l2.getFecha_lectura_ini().compareTo(l1.getFecha_lectura_ini());
+        });
+        notifyDataSetChanged();
+    }
+    public void ordenarPorFinalizado() {
+        Collections.sort(lista, (l1, l2) -> {
+            if (!l1.getFinalizado() && !l2.getFinalizado()) return 0;
+            if (!l1.getFinalizado() && l2.getFinalizado()) return 1;
+            return -1;
+        });
+        notifyDataSetChanged();
+    }
+
+    public void resetearOrden() {
+        lista = new ArrayList<>(librosOriginal);
+        notifyDataSetChanged();
+    }
+
 
 
     public Adaptador(@NonNull Context context) {
