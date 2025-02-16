@@ -10,12 +10,12 @@ public class UsuariosSQLiteHelper extends SQLiteOpenHelper {
 
     //Sentencia SQL para crear la tabla de Usuarios
     String sqlCreate = "CREATE TABLE IF NOT EXISTS bdlibros (" +
-            //"_id integer primary key autoincrement, " +
-            "categoria text not null, titulo text primary key, " +
-            "autor text NOT NULL UNIQUE, idioma long, " +
+            "_id integer primary key autoincrement, " +
+            "categoria text not null, titulo text NOT NULL UNIQUE, " +
+            "autor text NOT NULL, idioma long, " +
             "fecha_lectura_ini long, fecha_lectura_fin long, " +
             "prestado_a text, valoracion float, " +
-            "formato text, notas text, finalizado int);";
+            "formato text, notas text, finalizado integer);";
 
     public UsuariosSQLiteHelper(Context contexto, String nombre,
                                 CursorFactory factory, int version) {

@@ -82,7 +82,9 @@
         android:layout_height="wrap_content"
         android:layout_margin="0dp"
         android:layout_marginTop="8dp"
-        android:isIndicator="false"
+        android:clickable="false"
+        android:contextClickable="false"
+        android:isIndicator="true"
         android:padding="0dp"
         android:rating="2.5"
         android:stepSize="1"
@@ -96,6 +98,8 @@
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:clickable="false"
+        android:contextClickable="true"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -104,24 +108,33 @@
 
         <CheckBox
             android:id="@+id/checkBoxNotas"
+            style="@android:style/Widget.Material.CompoundButton.CheckBox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:clickable="false"
+            android:contextClickable="false"
             android:text="@string/notas"
             android:textSize="10sp"
             tools:layout_editor_absoluteX="79dp" />
 
         <CheckBox
             android:id="@+id/checkBoxFinalizado"
+            style="@android:style/Widget.Material.CompoundButton.CheckBox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="10sp"
-            android:text="@string/finalizado" />
+            android:clickable="false"
+            android:contextClickable="false"
+            android:text="@string/finalizado"
+            android:textSize="10sp" />
 
         <CheckBox
             android:id="@+id/checkBoxPrestado"
+            style="@android:style/Widget.Material.CompoundButton.CheckBox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="10sp"
-            android:text="@string/prestado" />
+            android:clickable="false"
+            android:contextClickable="false"
+            android:text="@string/prestado"
+            android:textSize="10sp" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

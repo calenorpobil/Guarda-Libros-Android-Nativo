@@ -55,7 +55,7 @@ public class AltaActivity extends AppCompatActivity {
 // Configurar Spinner de Idioma
         spIdioma = findViewById(R.id.spIdioma);
         adaptador = ArrayAdapter.createFromResource(
-                this, R.array.formatos, android.R.layout.simple_list_item_1);
+                this, R.array.idiomas, android.R.layout.simple_list_item_1);
         spIdioma.setAdapter(adaptador);
 
 // Configurar Spinner de Formato

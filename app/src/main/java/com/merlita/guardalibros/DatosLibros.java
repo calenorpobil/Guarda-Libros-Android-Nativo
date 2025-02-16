@@ -35,10 +35,11 @@ public class DatosLibros {
         setTitulo(titulo);
         setNotas(notas);
     }*/
-    public DatosLibros(String categoria, String titulo, String autor,
+    public DatosLibros(int _id, String categoria, String titulo, String autor,
                        String idioma, Long fecha_lectura_ini, Long fecha_lectura_fin,
                        String prestado_a, Float valoracion, String formato, String notas,
                        int finalizado) {
+        set_id(_id);
         setAutor(autor);
         setCategoria(categoria);
         setFormato(formato);

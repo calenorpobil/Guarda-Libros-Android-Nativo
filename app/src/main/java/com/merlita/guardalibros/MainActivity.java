@@ -1,10 +1,12 @@
 package com.merlita.guardalibros;
 
+import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -59,7 +61,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //EdgeToEdge.enable(this);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
         try(UsuariosSQLiteHelper usdbh =
@@ -68,11 +70,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             db = usdbh.getWritableDatabase();
 
             //Crear tabla si existe:
+            db.execSQL("DROP TABLE IF EXISTS bdlibros");
             usdbh.onCreate(db);
 
             datosParaSQL();
             rellenarLista();
-
 
 
             db.close();
@@ -101,28 +103,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 "VALUES ('Finanzas', 'Padre rico, padre pobre', 'Robert T. Kiyosaki', 'Español', 1690848000000, 1693440000000, 'David Torres', 4.0, 'Digital', 'Enfoque alternativo sobre educación financiera');");
 */
         if(lista.isEmpty()){
-            //try {
-                auxiliar = new DatosLibros();
-            //} catch (miExcepcion e) {
-            //    toast(e);
-            //}
-            //El mensaje de inicio:
+            auxiliar = new DatosLibros();
             datosVacio.add(auxiliar);
         }
-        /*
-        try {
-            inicializarLista();
-        } catch (miExcepcion e) {
-            toast(e);
-        }*/
         tv = findViewById(R.id.tvTitulo);
         btAlta = findViewById(R.id.btAlta);
-        //et = findViewById(R.id.editTextText);
         vistaRecycler = findViewById(R.id.recyclerView);
         adaptador = new Adaptador(this, this, lista);
 
         vistaRecycler.setLayoutManager(new LinearLayoutManager(this));
         vistaRecycler.setAdapter(adaptador);
+
 
         btAlta.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -141,37 +132,48 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu)
-    {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu_fecha_hora, menu);
-        return true;
-    }
-    @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if(item.getItemId() == R.id.fecha || item.getItemId() == R.id.hora){
-            //DialogFragment ff = new FragmentoFecha();
-            //ff.show(getSupportFragmentManager(), "fecha");
-            //DialogFragment fh = new FragmentoHora();
-            //fh.show(getSupportFragmentManager(), "hora");
-
-            Toast.makeText(this, "Hoola",
-                    Toast.LENGTH_SHORT).show();
+        switch(item.getItemId())
+        {
+            case 121:
+                //MENU --> EDITAR
+                Intent i = new Intent(this, EditActivity.class);
+                posicionEdicion = item.getGroupId();
+                DatosLibros libro = lista.get(posicionEdicion);
+                i.putExtra("_ID", libro.get_id());
+                i.putExtra("CATEGORIA", libro.getCategoria());
+                i.putExtra("TITULO", libro.getTitulo());
+                i.putExtra("AUTOR", libro.getAutor());
+                i.putExtra("IDIOMA", libro.getIdioma());
+                i.putExtra("FECHA_INICIO", libro.getFecha_lectura_ini());
+                i.putExtra("FECHA_FIN", libro.getFecha_lectura_fin());
+                i.putExtra("PRESTADO_A", libro.getPrestado_a());
+                i.putExtra("VALORACION", libro.getValoracion());
+                i.putExtra("FORMATO", libro.getFormato());
+                i.putExtra("NOTAS", libro.getNotas());
+                i.putExtra("FINALIZADO", libro.getFinalizado());
+                lanzadorEdit.launch(i);
+                return true;
+            case 122:
+                //MENU --> BORRAR
+                lista.remove(item.getGroupId());
+                adaptador.notifyDataSetChanged();
+                return true;
+            default:
+                return super.onContextItemSelected(item);
         }
-
-        return super.onOptionsItemSelected(item);
     }
 
     private void datosParaSQL() {
         if(db!=null){
             try{
-                db.execSQL("INSERT INTO bdlibros (categoria, titulo, autor, idioma, fecha_lectura_ini, fecha_lectura_fin, prestado_a, valoracion, formato, notas) \n" +
+                db.execSQL("INSERT INTO bdlibros (categoria, titulo, autor, idioma, fecha_lectura_ini, fecha_lectura_fin, prestado_a, valoracion, formato, notas, finalizado) \n" +
                         "VALUES ('Ficción', 'Cien años de soledad', 'Gabriel García Márquez', 'Español', 1672531200000, 1673740800000, NULL, 4.8, 'Físico', " +
-                        "'Obra maestra del realismo mágico latinoamericano');");
-                db.execSQL("INSERT INTO bdlibros (categoria, titulo, autor, idioma, fecha_lectura_ini, fecha_lectura_fin, prestado_a, valoracion, formato, notas) " +
-                        "VALUES ('No ficción', 'Sapiens: De animales a dioses', 'Yuval Noah Harari', 'Inglés', 1677984000000, 1679289600000, NULL, 4.7, 'Digital', 'Fascinante recorrido por la historia humana')");
-                db.execSQL("INSERT INTO bdlibros (categoria, titulo, autor, idioma, fecha_lectura_ini, fecha_lectura_fin, prestado_a, valoracion, formato, notas) " +
-                        "VALUES ('Tecnología', 'Clean Code', 'Robert C. Martin', 'Inglés', 1675987200000, 1677283200000, 'Ana Sánchez', 4.6, 'Físico', 'Fundamental para mejores prácticas de programación');");
+                        "'Obra maestra del realismo mágico latinoamericano', 1);");
+                db.execSQL("INSERT INTO bdlibros (categoria, titulo, autor, idioma, fecha_lectura_ini, fecha_lectura_fin, prestado_a, valoracion, formato, notas, finalizado) " +
+                        "VALUES ('No ficción', 'Sapiens: De animales a dioses', 'Yuval Noah Harari', 'Inglés', 1677984000000, 1679289600000, NULL, 4.7, 'Digital', 'Fascinante recorrido por la historia humana', 0)");
+                db.execSQL("INSERT INTO bdlibros (categoria, titulo, autor, idioma, fecha_lectura_ini, fecha_lectura_fin, prestado_a, valoracion, formato, notas, finalizado) " +
+                        "VALUES ('Tecnología', 'Clean Code', 'Robert C. Martin', 'Inglés', 1675987200000, 1677283200000, 'Ana Sánchez', 4.6, 'Físico', 'Fundamental para mejores prácticas de programación', 1);");
             } catch (SQLiteConstraintException e) {
                 Toast.makeText(this, e.getMessage(),
                         Toast.LENGTH_SHORT).show();
@@ -183,7 +185,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Cursor c = db.rawQuery("select * from bdlibros;", null);
 
         while (c.moveToNext()) {
-            int index = c.getColumnIndex("titulo");
+            int index = c.getColumnIndex("_id");
+            int id = c.getInt(index);
+            index = c.getColumnIndex("titulo");
             String titulo = c.getString(index);
             index = c.getColumnIndex("categoria");
             String categoria = c.getString(index);
@@ -205,7 +209,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             String notas = c.getString(index);
             index = c.getColumnIndex("finalizado");
             int finalizado = c.getInt(index);
-            lista.add(new DatosLibros(categoria, titulo, autor, idioma,
+            lista.add(new DatosLibros(id, categoria, titulo, autor, idioma,
                     fecha_lectura_fin, fecha_lectura_ini, prestado_a,
                     valoracion, formato, notas, finalizado));
         }
@@ -223,10 +227,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 //MENU --> EDITAR
                 Intent i = new Intent(this, EditActivity.class);
                 posicionEdicion = item.getGroupId();
-                String titulo = lista.get(posicionEdicion).getTitulo();
-                String autor = lista.get(posicionEdicion).getAutor();
-                i.putExtra("NOMBRE", titulo);
-                i.putExtra("EDAD", autor);
+                DatosLibros libro = lista.get(posicionEdicion);
+                i.putExtra("_ID", libro.get_id());
+                i.putExtra("CATEGORIA", libro.getCategoria());
+                i.putExtra("TITULO", libro.getTitulo());
+                i.putExtra("AUTOR", libro.getAutor());
+                i.putExtra("IDIOMA", libro.getIdioma());
+                i.putExtra("FECHA_INICIO", libro.getFecha_lectura_ini());
+                i.putExtra("FECHA_FIN", libro.getFecha_lectura_fin());
+                i.putExtra("PRESTADO_A", libro.getPrestado_a());
+                i.putExtra("VALORACION", libro.getValoracion());
+                i.putExtra("FORMATO", libro.getFormato());
+                i.putExtra("NOTAS", libro.getNotas());
+                i.putExtra("FINALIZADO", libro.getFinalizado());
                 lanzadorEdit.launch(i);
                 return true;
             case 122:
@@ -255,22 +268,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 @Override
                 public void onActivityResult(ActivityResult resultado)
                 {
-                    if(resultado.getResultCode()==RESULT_OK){
-                        Intent i = resultado.getData();
-                        assert i != null;
-                        String titulo = i.getStringExtra("NOMBRE");
-                        String autor = i.getStringExtra("EDAD");
+                    if(resultado.getResultCode()==RESULT_OK) {
+                        Intent data = resultado.getData();
+                        assert data != null;
+                        DatosLibros editLibro = new DatosLibros(
+                                data.getIntExtra("ID", -1),
+                                data.getStringExtra("CATEGORIA"),
+                                data.getStringExtra("TITULO"),
+                                data.getStringExtra("AUTOR"),
+                                data.getStringExtra("IDIOMA"),
+                                data.getLongExtra("FECHA_INICIO", -1),
+                                data.getLongExtra("FECHA_FIN", -1),
+                                data.getStringExtra("PRESTADO_A"),
+                                data.getFloatExtra("VALORACION", -1f),
+                                data.getStringExtra("FORMATO"),
+                                data.getStringExtra("NOTAS"),
+                                data.getIntExtra("FINALIZADO", 0)
+                        );
 
-                        //try {
-                            if(posicionEdicion==-999){
-                                lista.add(0, new DatosLibros(titulo, autor));
-                            }else{
-                                lista.set(posicionEdicion, new DatosLibros(titulo, autor));
-                            }
-                        //} catch (miExcepcion e) {
-                          //  toast(e);
-                        //}
+                        DatosLibros antig = lista.get(editLibro.get_id());
+                        antig = editLibro;
+                        // Editar el libro
+
+                        editarSQL(editLibro);
                         adaptador.notifyDataSetChanged();
+                    }else{
+                        //SIN DATOS
                     }
                 }
             }
@@ -288,6 +311,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         Intent data = resultado.getData();
                         assert data != null;
                         DatosLibros nuevoLibro = new DatosLibros(
+                                data.getIntExtra("ID", -1),
                                 data.getStringExtra("CATEGORIA"),
                                 data.getStringExtra("TITULO"),
                                 data.getStringExtra("AUTOR"),
@@ -302,7 +326,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         );
 
                         // Insertar en BD
-                        insertarSQL(nuevoLibro);
+                        int id = insertarSQL(nuevoLibro);
+                        nuevoLibro.set_id(id);
                         lista.add(nuevoLibro);
                         adaptador.notifyDataSetChanged();
                     }else{
@@ -345,7 +370,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show(getSupportFragmentManager(), "CustomDialog");
     }
 
-    private void insertarSQL(DatosLibros libro){
+    private int insertarSQL(DatosLibros libro){
+        int id=-1;
         try(UsuariosSQLiteHelper usdbh =
                     new UsuariosSQLiteHelper(this,
                             "DBUsuarios", null, 1);){
@@ -361,6 +387,45 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     libro.getFecha_lectura_ini()+"', '"+libro.getFecha_lectura_fin()+"', '"+
                     libro.getPrestado_a()+"', '"+libro.getValoracion()+"', '" +
                     libro.getFormato()+"', '"+libro.getNotas()+"', "+libro.getFinalizado()+");");
+
+            String sql = ("SELECT _ID FROM BDLIBROS WHERE TITULO = ?");
+            Cursor cursor = db.rawQuery(sql, null);
+            if(cursor.moveToNext()){
+                id = cursor.getInt(0);
+            }
+
+
+            db.close();
+        }
+        return id;
+    }
+    private void editarSQL(DatosLibros libro){
+        try(UsuariosSQLiteHelper usdbh =
+                    new UsuariosSQLiteHelper(this,
+                            "DBUsuarios", null, 1);){
+            db = usdbh.getWritableDatabase();
+
+
+            ContentValues values = new ContentValues();
+            values.put("categoria", libro.getCategoria());
+            values.put("titulo", libro.getTitulo());
+            values.put("autor", libro.getAutor());
+            values.put("idioma", libro.getIdioma());
+            values.put("fecha_lectura_ini", libro.getFecha_lectura_ini());
+            values.put("fecha_lectura_fin", libro.getFecha_lectura_fin());
+            values.put("prestado_a", libro.getPrestado_a());
+            values.put("valoracion", libro.getValoracion());
+            values.put("formato", libro.getFormato());
+            values.put("notas", libro.getNotas());
+            values.put("finalizado", libro.getFinalizado() ? 1 : 0);
+
+            // Actualizar usando el ID como condición
+            db.update("bdlibros",
+                    values,
+                    "_id = ?",
+                    new String[]{String.valueOf(libro.get_id())});
+            adaptador.notifyDataSetChanged();
+
 
             db.close();
         }

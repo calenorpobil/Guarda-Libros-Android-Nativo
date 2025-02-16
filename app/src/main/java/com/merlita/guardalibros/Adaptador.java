@@ -27,43 +27,44 @@ public class Adaptador extends RecyclerView.Adapter<Adaptador.MiContenedor>
         LayoutInflater inflador =
                 (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View v = inflador.inflate(R.layout.text_row_item, parent, false);
+
         return new MiContenedor(v);
     }
 
+    //PONER VALORES
     @Override
     public void onBindViewHolder(@NonNull MiContenedor holder, int position) {
-        holder.tvTitulo.setText(lista.get(position).getTitulo());
-        holder.tvAutor.setText(lista.get(position).getAutor());
-        holder.tvFecha.setText(lista.get(position).getFechaFinDate().toString());
-        holder.tvFormato.setText(lista.get(position).getFormato());
-        holder.rbEstrellas.setRating(lista.get(position).getValoracion());
-        String prestado = lista.get(position).getPrestado_a();
+        DatosLibros libro = lista.get(position);
+        holder.tvTitulo.setText(libro.getTitulo());
+        holder.tvAutor.setText(libro.getAutor());
+        holder.tvFecha.setText(libro.getFechaFinDate().toString());
+        holder.tvFormato.setText(libro.getFormato());
+        holder.rbEstrellas.setRating(libro.getValoracion());
+        String prestado = libro.getPrestado_a();
         if(prestado!=null)
             holder.cbPrestado.setChecked(!prestado.isEmpty());
-        holder.cbFinalizado.setChecked(lista.get(position).getFinalizado());
-        holder.cbNotas.setChecked(lista.get(position).getNotas().isEmpty());
+        holder.cbFinalizado.setChecked(libro.getFinalizado());
+        holder.cbNotas.setChecked(libro.getNotas().isEmpty());
+        if (libro.getIdioma().equals("Español"))
+            holder.tvBandera.setText("\uD83C\uDDEA\uD83C\uDDF8");
+        if (libro.getIdioma().equals("Inglés"))
+            holder.tvBandera.setText("\uD83C\uDDEC\uD83C\uDDE7");
+        if (libro.getIdioma().equals("Alemán"))
+            holder.tvBandera.setText("\uD83C\uDDE9\uD83C\uDDEA");
         holder.imagen.setImageResource(R.mipmap.libro);
 
-        holder.cbFinalizado.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View v){
 
-
-
-
-
-            }
-
-        });
 
 
     }
 
     public Adaptador(View.OnClickListener escuchador,
                      Context context, ArrayList<DatosLibros> lista) {
+        super();
         this.escuchador = escuchador;
         this.context = context;
         this.lista = lista;
+
     }
 
     @Override
@@ -98,6 +99,7 @@ public class Adaptador extends RecyclerView.Adapter<Adaptador.MiContenedor>
             cbNotas = (CheckBox) itemView.findViewById(R.id.checkBoxNotas);
             cbFinalizado = (CheckBox) itemView.findViewById(R.id.checkBoxFinalizado);
             cbPrestado = (CheckBox) itemView.findViewById(R.id.checkBoxPrestado);
+            itemView.setOnCreateContextMenuListener(this);
         }
 
         @Override
@@ -106,7 +108,6 @@ public class Adaptador extends RecyclerView.Adapter<Adaptador.MiContenedor>
         {
             contextMenu.add(getAdapterPosition(), 121, 0, "EDITAR");
             contextMenu.add(getAdapterPosition(), 122, 1, "BORRAR");
-
         }
     }
 
