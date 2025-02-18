@@ -1,4 +1,4 @@
-package com.example.proyectobotonesidiomahora;
+package com.merlita.guardalibros;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -11,7 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
 
-public class Fragmento2Botones extends DialogFragment {
+public class FragmentoTexto extends DialogFragment {
 
 
 
@@ -20,7 +20,7 @@ public class Fragmento2Botones extends DialogFragment {
         AlertDialog.Builder ventana = new AlertDialog.Builder(getActivity());
         ventana.setTitle("DIALOGO CON FRAGMENTO");
         ventana.setMessage("Dialogo que utiliza un fragmento");
-        ventana.setIcon(R.drawable.baseline_check_box_24);
+        //ventana.setIcon(R.drawable.baseline_check_box_24);
         ventana.setNegativeButton("SI", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {

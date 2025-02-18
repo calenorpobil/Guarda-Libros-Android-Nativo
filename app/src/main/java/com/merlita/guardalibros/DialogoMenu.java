@@ -10,7 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 
-public class DialogoPersonalizado extends DialogFragment {
+public class DialogoMenu extends DialogFragment {
 
     public interface CustomDialogListener {
         void onAltaLibroClick();

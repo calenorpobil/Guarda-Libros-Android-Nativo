@@ -53,6 +53,8 @@ public class Adaptador extends RecyclerView.Adapter<Adaptador.MiContenedor>
             holder.tvBandera.setText("\uD83C\uDDEC\uD83C\uDDE7");
         if (libro.getIdioma().equals("Alemán"))
             holder.tvBandera.setText("\uD83C\uDDE9\uD83C\uDDEA");
+        if (libro.getIdioma().equals("Esperanto"))
+            holder.tvBandera.setText("🏁");
         holder.imagen.setImageResource(R.mipmap.libro);
 
 

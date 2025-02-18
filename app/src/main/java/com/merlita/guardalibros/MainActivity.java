@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -33,7 +34,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.merlita.guardalibros.Excepciones.miExcepcion;
 
 import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener,
         DialogoPersonalizado.CustomDialogListener  {
@@ -48,6 +51,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     DatosLibros auxiliar;
     private final ArrayList<DatosLibros> datosVacio =
             new ArrayList<>();
+
+    private static final int REQUEST_EXPORT_FILE = 1;
+    private static final int REQUEST_IMPORT_FILE = 2;
+
+
 
     SQLiteDatabase db;
 
@@ -153,6 +161,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 i.putExtra("NOTAS", libro.getNotas());
                 i.putExtra("FINALIZADO", libro.getFinalizado());
                 lanzadorEdit.launch(i);
+                adaptador.notifyDataSetChanged();
                 return true;
             case 122:
                 //MENU --> BORRAR
@@ -241,6 +250,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 i.putExtra("NOTAS", libro.getNotas());
                 i.putExtra("FINALIZADO", libro.getFinalizado());
                 lanzadorEdit.launch(i);
+                adaptador.notifyDataSetChanged();
                 return true;
             case 122:
                 //MENU --> BORRAR
@@ -287,6 +297,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         );
 
                         DatosLibros antig = lista.get(editLibro.get_id());
+                        lista.set(editLibro.get_id(), editLibro);
+                        editarSQL(editLibro);
                         antig = editLibro;
                         // Editar el libro
 
@@ -329,6 +341,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         int id = insertarSQL(nuevoLibro);
                         nuevoLibro.set_id(id);
                         lista.add(nuevoLibro);
+
                         adaptador.notifyDataSetChanged();
                     }else{
                         //SIN DATOS
@@ -356,12 +369,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onImportarClick() {
-        // Lógica de importación
+        importData();
     }
 
     @Override
     public void onExportarClick() {
-        // Lógica de exportación
+        exportData();
     }
 
     // Método para mostrar el diálogo
@@ -388,7 +401,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     libro.getPrestado_a()+"', '"+libro.getValoracion()+"', '" +
                     libro.getFormato()+"', '"+libro.getNotas()+"', "+libro.getFinalizado()+");");
 
-            String sql = ("SELECT _ID FROM BDLIBROS WHERE TITULO = ?");
+            String sql = ("SELECT _ID FROM BDLIBROS WHERE TITULO = "+libro.getTitulo());
             Cursor cursor = db.rawQuery(sql, null);
             if(cursor.moveToNext()){
                 id = cursor.getInt(0);
@@ -399,6 +412,36 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         return id;
     }
+
+    private void exportData() {
+        Date c = new Date(System.currentTimeMillis());
+        String fileName = "libros_" + new SimpleDateFormat("yyyyMMdd_HHmmss",
+                Locale.getDefault()).format(c) + ".csv";
+        DataExporter.exportToCSV(this, fileName);
+    }
+
+    // Para importar
+    private void importData() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("text/*");
+        startActivityForResult(intent, REQUEST_IMPORT_FILE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (resultCode == RESULT_OK) {
+            if (requestCode == REQUEST_IMPORT_FILE && data != null) {
+                Uri uri = data.getData();
+                DataImporter.importFromCSV(this, uri);
+            }
+        }
+    }
+
+
+
     private void editarSQL(DatosLibros libro){
         try(UsuariosSQLiteHelper usdbh =
                     new UsuariosSQLiteHelper(this,
